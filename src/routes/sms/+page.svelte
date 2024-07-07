@@ -27,6 +27,7 @@
   // 搜索的人
   let filterPeople: Person[] = [];
   let people: Person[] = [];
+  let searchValue: string = '';
 
   // 聊天内容滚动
   const scrollChatBottom = (behavior?: ScrollBehavior): void => {
@@ -67,21 +68,21 @@
     const key = people.findIndex(item => item.id === id);
 		if (key === -1) {
       const newPeople = {
-        id: people.length,
+        id: id || people.length,
         name,
         unread: 1,
         message: messageList,
         lastMessage: newMessage
 			}
       people = [newPeople, ...people];
-      console.log(people)
+
 		} else {
       if (isAddUnread) people[key].unread += 1;
       people[key].message = messageList;
       people[key].lastMessage = newMessage;
 		}
 
-    filterPeople = people;
+    searchContacts(searchValue);
 	}
 
   const onPromptKeydown = (event: KeyboardEvent): void => {
@@ -91,22 +92,22 @@
     }
   }
 
-  const searchContacts = (event: InputEvent): void => {
-    const value = event.target.value;
-    filterPeople = value ? people.filter(item => {
-      const filterName = item.name.includes(value);
-      let filterMsg = false;
+  const searchContacts = (input: string): void => {
+    searchValue = input.toLowerCase();
+    filterPeople = searchValue ? people.filter(item => {
+      const matchName = item.name.toLowerCase().includes(searchValue);
+      let matchMsg = false;
       item.message.forEach(item => {
-        if (item.message.includes(value)) filterMsg = true;
+        if (item.message.toLowerCase().includes(searchValue)) matchMsg = true;
 			})
-      return filterName || filterMsg;
+      return matchName || matchMsg;
 		}) : people;
 	}
 
   const goChat = (index: number): void => {
-    messageList = people[index].message;
-    currentPerson = people[index].name;
-    currentPersonId = people[index].id;
+    messageList = filterPeople[index].message;
+    currentPerson = filterPeople[index].name;
+    currentPersonId = filterPeople[index].id;
     people[index].unread = 0;
     filterPeople[index].unread = 0;
 
@@ -168,7 +169,7 @@
 	}
 
   const onToast = (): void => {
-    goChat(people.findIndex(item => item.id === toastId));
+    goChat(filterPeople.findIndex(item => item.id === toastId));
 	}
 
   onMount(() => {

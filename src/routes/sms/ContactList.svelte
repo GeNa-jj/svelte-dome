@@ -3,7 +3,7 @@
 
   export let people = [];
   export let currentPersonId;
-  export let searchContacts: (InputEvent) => void;
+  export let searchContacts: (string) => void;
   export let goChat: (number) => void;
 
 </script>
@@ -12,7 +12,7 @@
 	<div class="flex flex-col h-full">
 
 		<header class="border-b border-surface-500/30 p-4">
-			<input class="input search-input" type="search" placeholder="Search..." on:input={searchContacts} />
+			<input class="input search-input" type="search" placeholder="Search..." on:input={event => searchContacts(event.target.value)} />
 		</header>
 
 		<div class="flex-1 p-4 space-y-4 overflow-y-auto">
