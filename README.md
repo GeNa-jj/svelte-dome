@@ -1,6 +1,6 @@
 # main
 
-node v20 以上
+node v18.20.0 以上
 
 ## 安装依赖:
 
@@ -12,4 +12,4 @@ node v20 以上
 
 ## 测试
 
-`yarn test`
+`yarn run test:unit`
