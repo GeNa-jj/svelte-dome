@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { faker } from '@faker-js/faker';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { Avatar, Drawer, getDrawerStore, Toast, getToastStore } from '@skeletonlabs/skeleton';
 	import type { DrawerSettings, ToastSettings } from '@skeletonlabs/skeleton';
 	import ContactList from './ContactList.svelte';
@@ -18,6 +18,7 @@
 
 	// 滚动的dom
 	let elemChat: HTMLElement;
+	let elemToast: HTMLElement;
 	// 聊天的内容和人
 	let messageList: MessageFeed[] = [];
 	let currentPerson: string = '';
@@ -28,6 +29,8 @@
 	let filterPeople: Person[] = [];
 	let people: Person[] = [];
 	let searchValue: string = '';
+
+	let ws: WebSocket;
 
 	// 聊天内容滚动
 	const scrollChatBottom = (behavior?: ScrollBehavior): void => {
@@ -54,11 +57,10 @@
 			message: message || currentMessage
 		};
 		const isReading = name === currentPerson || host;
-
 		messageList = [...messageList, newMessage];
-
 		saveMessage(messageList, newMessage, currentPersonId, !isReading, newMsgName);
 
+		// 清空输入
 		if (!name) {
 			currentMessage = '';
 		}
@@ -70,7 +72,13 @@
 		);
 
 		// 模拟回复
-		host && mockReceiveSms(3000);
+		host && ws.send(JSON.stringify({
+			currentPersonInfo: {
+				id: currentPersonId,
+				name: currentPerson
+			},
+			message: newMessage.message
+		}));
 	};
 
 	// 保存短信
@@ -199,18 +207,58 @@
 		}, delay);
 	};
 
+	const addListenerToast = (): void => {
+		let startY: number;
+		let endY: number;
+		elemToast.addEventListener('touchstart', (event: TouchEvent): void => {
+			startY = event.touches[0].pageY;
+		});
+
+		elemToast.addEventListener('touchmove', (event: TouchEvent): void => {
+			endY = event.changedTouches[0].pageY;
+
+			startY - endY > 10 && toastStore.clear();
+		});
+	}
+
+	const initWebSocket = () => {
+		ws = new WebSocket('ws://localhost:8080');
+
+		ws.onopen = (event: Event): void => {
+			console.log('WebSocket connected');
+		};
+
+		ws.onerror = (error: Event): void => {
+			console.error('WebSocket error', error);
+		};
+
+		// receive msg
+		ws.onmessage = (event: MessageEvent): void => {
+			receiveSms(JSON.parse(event.data));
+		};
+
+		ws.onclose = (): void => {
+			console.log('WebSocket close');
+		};
+	};
+
 	onMount(() => {
 		// 获取数据
 		people = getContactList();
 		filterPeople = people;
 
-		isMobile();
+		// 监听上滑关闭msg;
+		addListenerToast();
 
 		// 模拟收信息
-		mockReceiveSms(5000);
+		initWebSocket();
 
 		// 在浏览器测试 receiveSms({ id: 3, name: 'Joey', message: 'hello' })
 		window.receiveSms = receiveSms;
+	});
+
+	onDestroy(() => {
+		ws && ws.close();
 	});
 
 	$: contactListProps = {
@@ -287,8 +335,6 @@
 	</div>
 </Drawer>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div on:click={onToast}>
+<div on:click={onToast} bind:this={elemToast}>
 	<Toast width="w-full opacity-95" position="t" />
 </div>

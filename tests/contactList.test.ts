@@ -14,7 +14,7 @@ beforeEach(() => {
 	handleInputSpy = vi.fn();
 });
 
-const render = (props: any = {}) => {
+const render = (props: object = {}) => {
 	return new ContactList({
 		target: document.body,
 		props: {
@@ -32,7 +32,7 @@ test('mock types work properly', () => {
 	expectTypeOf(contactData).toEqualTypeOf<Person[]>();
 });
 
-test('no data message', () => {
+test('show no data when the data is empty', () => {
 	render({
 		people: []
 	})
@@ -70,7 +70,7 @@ test(`calls the action when input is entered`, async () => {
 	expect(handleInputSpy).toHaveBeenCalledTimes(1);
 })
 
-test(`calls the action when input is entered`, async () => {
+test(`calls the action when contact button is clicked`, async () => {
 	render({ currentPersonId: 0 });
 
 	const btn = document.querySelector('.btn') as HTMLButtonElement;
