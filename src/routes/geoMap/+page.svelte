@@ -87,7 +87,7 @@
 	const initData = (): void => {
 		countryOptions = worldJSON.features.map((item) => {
 			const value = item.properties.name;
-			const label = mapZHName[value] || '';
+			const label = mapZHName[value] || value || '';
 			item.properties.name = label;
 			return {
 				label,
