@@ -15,10 +15,11 @@
 	const drawerStore = getDrawerStore();
 	const toastStore = getToastStore();
 	let toastId: number;
+	let startY: number;
+	let endY: number;
 
 	// 滚动的dom
 	let elemChat: HTMLElement;
-	let elemToast: HTMLElement;
 	// 聊天的内容和人
 	let messageList: MessageFeed[] = [];
 	let currentPerson: string = '';
@@ -154,7 +155,7 @@
 		const name = messageObj.name;
 		const message = messageObj.message || faker.lorem.paragraph();
 		const host = false;
-		const curPeople = people.find((item) => item.id === id);
+		const receivePeople = people.find((item) => item.id === id);
 
 		if (currentPersonId === id) {
 			addMessage(name, message, host);
@@ -179,26 +180,20 @@
 			toastStore.trigger(t);
 
 			const newMessage = {
-				id: curPeople?.message.length || 0,
+				id: receivePeople?.message.length || 0,
 				host,
 				name,
 				timestamp: `Today @ ${getCurrentTimestamp()}`,
 				message
 			};
 
-			const newList = [...(curPeople?.message || []), newMessage];
-			saveMessage(newList, newMessage, id, true, name);
+			const newMsgList = [...(receivePeople?.message || []), newMessage];
+			saveMessage(newMsgList, newMessage, id, true, name);
 		}
 	};
 
 	const onToast = (): void => {
 		goChat(filterPeople.findIndex((item) => item.id === toastId));
-	};
-
-	const isMobile = (): void =>  {
-		if (window.innerWidth > 1024) {
-			window.alert('Please use mobile mode to view');
-		}
 	};
 
 	const mockReceiveSms = (delay: number = 3000): void => {
@@ -207,18 +202,13 @@
 		}, delay);
 	};
 
-	const addListenerToast = (): void => {
-		let startY: number;
-		let endY: number;
-		elemToast.addEventListener('touchstart', (event: TouchEvent): void => {
-			startY = event.touches[0].pageY;
-		});
+	const handleTouchStart = (event: TouchEvent) => {
+		startY = event.touches[0].pageY;
+	}
 
-		elemToast.addEventListener('touchmove', (event: TouchEvent): void => {
-			endY = event.changedTouches[0].pageY;
-
-			startY - endY > 10 && toastStore.clear();
-		});
+	const handleTouchMove = (event: TouchEvent) => {
+		endY = event.changedTouches[0].pageY;
+		startY - endY > 10 && toastStore.clear();
 	}
 
 	const initWebSocket = () => {
@@ -246,9 +236,6 @@
 		// 获取数据
 		people = getContactList();
 		filterPeople = people;
-
-		// 监听上滑关闭msg;
-		addListenerToast();
 
 		// 模拟收信息
 		initWebSocket();
@@ -335,6 +322,10 @@
 	</div>
 </Drawer>
 
-<div on:click={onToast} bind:this={elemToast}>
+<div
+	on:click={onToast}
+	on:touchstart={handleTouchStart}
+	on:touchmove={handleTouchMove}
+>
 	<Toast width="w-full opacity-95" position="t" />
 </div>

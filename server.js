@@ -23,12 +23,12 @@ server.on('connection', ws => {
 
 		num += 1;
 		if (num > 3) {
-			clearInterval(timer);
+			timer && clearInterval(timer);
 		}
 	}, 10 * 1000);
 
 	ws.on('close', () => {
-		clearInterval(timer);
+		timer && clearInterval(timer);
 		console.log('Connection closed');
 	});
 });
